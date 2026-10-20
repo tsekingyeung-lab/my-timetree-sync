@@ -1,0 +1,40 @@
+name: Export TimeTree Calendar
+
+on:
+  schedule:
+    # Runs automatically every day at 17:00 HKT/SGT (09:00 UTC)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install timetree-exporter
+        run: pip install timetree-exporter
+
+      - name: Export TimeTree 🍙💙 Calendar to .ics
+        env:
+          TIMETREE_EMAIL: ${{ secrets.TIMETREE_EMAIL }}
+          TIMETREE_PASSWORD: ${{ secrets.TIMETREE_PASSWORD }}
+        run: |
+          timetree-exporter -e "$TIMETREE_EMAIL" -c "Qp2FVHxaJJdU" -o timetree_Qp2FVHxaJJdU.ics --include-comments
+
+      - name: Save updated .ics file to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add timetree_Qp2FVHxaJJdU.ics
+          git diff --staged --quiet || git commit -m "Update TimeTree calendar export"
+          git push
